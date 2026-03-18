@@ -114,7 +114,7 @@ class TestCellsViewIteration:
         ctx = AsyncCodeModeContext(k)
         assert len(ctx.cells) == 2
 
-    async def test_iteration(self, k: Kernel) -> None:
+    async def test_iteration_yields_cell_ids(self, k: Kernel) -> None:
         await k.run(
             [
                 ExecuteCellCommand(cell_id="a", code="x = 1"),
@@ -123,5 +123,54 @@ class TestCellsViewIteration:
         )
         ctx = AsyncCodeModeContext(k)
 
-        ids = [cell.cell_id for cell in ctx.cells]
+        ids = list(ctx.cells)
         assert ids == ["a", "b"]
+
+    async def test_keys(self, k: Kernel) -> None:
+        await k.run(
+            [
+                ExecuteCellCommand(cell_id="a", code="x = 1"),
+                ExecuteCellCommand(cell_id="b", code="y = 2"),
+            ]
+        )
+        ctx = AsyncCodeModeContext(k)
+        assert ctx.cells.keys() == ["a", "b"]
+
+    async def test_values(self, k: Kernel) -> None:
+        await k.run(
+            [
+                ExecuteCellCommand(cell_id="a", code="x = 1"),
+                ExecuteCellCommand(cell_id="b", code="y = 2"),
+            ]
+        )
+        ctx = AsyncCodeModeContext(k)
+        vals = ctx.cells.values()
+        assert [v.cell_id for v in vals] == ["a", "b"]
+        assert [v.code for v in vals] == ["x = 1", "y = 2"]
+
+    async def test_items(self, k: Kernel) -> None:
+        await k.run(
+            [
+                ExecuteCellCommand(cell_id="a", code="x = 1"),
+                ExecuteCellCommand(cell_id="b", code="y = 2"),
+            ]
+        )
+        ctx = AsyncCodeModeContext(k)
+        items = ctx.cells.items()
+        assert [(cid, cell.code) for cid, cell in items] == [
+            ("a", "x = 1"),
+            ("b", "y = 2"),
+        ]
+
+    async def test_contains(self, k: Kernel) -> None:
+        await k.run(
+            [
+                ExecuteCellCommand(cell_id="a", code="x = 1"),
+                ExecuteCellCommand(cell_id="b", code="y = 2"),
+            ]
+        )
+        ctx = AsyncCodeModeContext(k)
+        assert "a" in ctx.cells
+        assert "nonexistent" not in ctx.cells
+        assert 0 in ctx.cells
+        assert 5 not in ctx.cells
